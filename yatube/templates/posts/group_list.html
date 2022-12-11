@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load user_filters %}
+{% load static %}
+{% block title %} {{group.title}} {% endblock %}
+{% block content %}
+<h1>{{group.title}}</h1>
+<p> {{group.description}}</p>
+{% for post in page_obj %}
+{% include 'posts/includes/article.html' with group_link=False author_link=True %}
+{% endfor %}
+{% include 'posts/includes/paginator.html' %}
+{% endblock %}

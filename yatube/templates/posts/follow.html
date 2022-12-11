@@ -1,0 +1,13 @@
+{% extends 'base.html' %}     
+{% load static %}
+{% load cache %}
+{% block title %} YATUBE: подписки {% endblock %}
+{% block content %}
+{% include 'posts/includes/switcher.html' %}
+<h1>Подписки на авторов</h1>
+{% for post in page_obj %}
+{% include 'posts/includes/article.html' with author_link=True group_link=True  %}
+{% endfor %}
+{% include 'posts/includes/paginator.html' %}
+{% endblock content %}
+
