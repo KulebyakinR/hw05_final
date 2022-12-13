@@ -25,6 +25,8 @@ class PostPagesTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username="auth")
+        cls.sub = User.objects.create_user(username="sub")
+        cls.not_auth = User.objects.create_user(username="not_auth")
         cls.group = Group.objects.create(
             title="Тестовая группа",
             slug="test_slug",
@@ -55,6 +57,7 @@ class PostPagesTests(TestCase):
             group=cls.group,
             image=cls.uploaded
         )
+        cls.following = User.objects.create(username='following')
 
     @classmethod
     def tearDownClass(cls):
@@ -77,6 +80,8 @@ class PostPagesTests(TestCase):
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+        self.sub_client = Client()
+        self.sub_client.force_login(self.sub)
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -101,8 +106,8 @@ class PostPagesTests(TestCase):
     def test_index_page_show_correct_context(self):
         """Шаблон posts:index сформирован с правильным контекстом."""
         response = self.authorized_client.get(reverse('posts:index'))
-        context_page = response.context["page_obj"][0]
-        self.check_contex(context_page)
+        context_object = response.context["page_obj"][0]
+        self.check_contex(context_object)
 
     def test_group_posts_page_show_correct_context(self):
         """Шаблон posts:group_list сформирован с правильным контекстом."""
@@ -112,9 +117,9 @@ class PostPagesTests(TestCase):
         object_list = response.context['page_obj'].object_list
         expected_posts = list(self.group.posts.all())
         self.assertListEqual(expected_posts, object_list)
-        context_page = response.context["page_obj"].object_list[0]
-        self.check_contex(context_page)
-        self.assertEqual(context_page.group, self.group)
+        context_object = response.context["page_obj"].object_list[0]
+        self.check_contex(context_object)
+        self.assertEqual(context_object.group, self.group)
 
     def test_profile_page_show_correct_context(self):
         """Шаблон posts:profile сформирован с правильным контекстом."""
@@ -127,9 +132,9 @@ class PostPagesTests(TestCase):
         object_list = response.context['page_obj'].object_list
         expected_posts = list(Post.objects.filter(author=self.user))
         self.assertListEqual(expected_posts, object_list)
-        context_page = response.context["page_obj"].object_list[0]
-        self.check_contex(context_page)
-        self.assertEqual(context_page.author, self.post.author)
+        context_object = response.context["page_obj"].object_list[0]
+        self.check_contex(context_object)
+        self.assertEqual(context_object.author, self.post.author)
 
     def test_post_detail_page_show_correct_context(self):
         """Шаблон posts:post_detail сформирован с правильным контекстом."""
@@ -139,8 +144,8 @@ class PostPagesTests(TestCase):
                 kwargs={"post_id": self.post.id},
             )
         )
-        context_page = response.context["post"]
-        self.check_contex(context_page)
+        context_object = response.context["post"]
+        self.check_contex(context_object)
 
     def test_post_create_page_show_correct_context(self):
         """Шаблон posts:post_create  сформирован с правильным контекстом."""
@@ -203,14 +208,12 @@ class PostPagesTests(TestCase):
             author=self.user,
             group=self.group_2
         )
-        group = self.group
-        post = self.new_post
-        page = reverse("posts:group_list", kwargs={"slug": group.slug})
+        page = reverse("posts:group_list", kwargs={"slug": self.group.slug})
         response = self.authorized_client.get(page)
         context_post = response.context['page_obj'][0]
-        self.assertNotEqual(context_post, post)
+        self.assertNotEqual(context_post, self.new_post)
 
-    def test_cache_Index_page(self):
+    def test_index_page_cached(self):
         new_post = Post.objects.create(
             text='New post',
             author=self.user
@@ -229,71 +232,75 @@ class PostPagesTests(TestCase):
         ).content
         self.assertNotEqual(actual_page, cleared_page)
 
-    def test_autorized_user_get_and_remove_follow(self):
+    def test_autorized_user_get_follow(self):
         """ Авторизованный пользователь может подписываться на других
-            пользователей и удалять их из подписок.
+        пользователей
         """
-        following = User.objects.create(username='following')
         self.authorized_client.post(
-            reverse('posts:profile_follow', kwargs={'username': following})
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': self.following}
+            )
         )
         self.assertIs(
-            Follow.objects.filter(user=self.user, author=following).exists(),
+            Follow.objects.filter(
+                user=self.user,
+                author=self.following).exists(),
             True
         )
+
+    def test_autorized_user_remove_follow(self):
+        """ Авторизованный пользователь может удалять их из подписок."""
         self.authorized_client.post(
-            reverse('posts:profile_unfollow', kwargs={'username': following})
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': self.following}
+            )
+        )
+        self.authorized_client.post(
+            reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': self.following}
+            )
         )
         self.assertIs(
-            Follow.objects.filter(user=self.user, author=following).exists(),
+            Follow.objects.filter(
+                user=self.user,
+                author=self.following).exists(),
             False
         )
 
-    def test_new_post_to_followers(self):
-        user = User.objects.create_user(username='username')
-        authorized_client = Client()
-        authorized_client.force_login(user)
+    def test_post_is_visible_for_subscriber(self):
+        '''Новый пост показывается подписчику'''
         Follow.objects.create(
-            user=self.user,
-            author=user
+            user=self.sub, author=self.user
         )
-        response = self.authorized_client.get(
-            reverse('posts:follow_index')
+        test_post = Post.objects.create(
+            author=self.user,
+            text='Пост для проверки подписки'
         )
-        actual_count = len(response.context['page_obj'])
-        Post.objects.create(
-            text='Text',
-            author=user,
-        )
-        response = self.authorized_client.get(
-            reverse('posts:follow_index')
-        )
-        new_count = len(response.context['page_obj'])
-        self.assertTrue(
-            new_count == actual_count + 1
+        self.assertEqual(
+            self.sub_client.get(
+                reverse('posts:follow_index')).context['page_obj'][0],
+            test_post
         )
 
-    def test_new_post_not_followers(self):
-        user = User.objects.create_user(username='username')
-        authorized_client = Client()
-        authorized_client.force_login(user)
+    def test_post_is_invisible_for_not_subscriber(self):
+        '''Новый пост НЕ показывается НЕ-подписчику'''
         Follow.objects.create(
-            user=self.user,
-            author=user
+            user=self.sub, author=self.user
         )
-        response = authorized_client.get(
-            reverse('posts:follow_index')
+        test_post = Post.objects.create(
+            author=self.user,
+            text='Пост для проверки подписки',
         )
-        actual_count = len(response.context['page_obj'])
-        Post.objects.create(
-            text='Text',
-            author=user,
+        self.user_2_authorized_client = Client()
+        self.user_2_authorized_client.force_login(self.not_auth)
+        self.assertNotEqual(
+            self.user_2_authorized_client.get(
+                reverse('posts:follow_index')).context['page_obj'],
+            test_post
         )
-        response = authorized_client.get(
-            reverse('posts:follow_index')
-        )
-        new_count = len(response.context['page_obj'])
-        self.assertEqual(actual_count, new_count)
 
 
 class PaginatorViewsTest(TestCase):

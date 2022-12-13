@@ -16,8 +16,6 @@ CACHE_TIME = 20
 @cache_page(20)
 def index(request):
     context = {
-        'group_link': 'group_link',
-        'author_link': 'author_link',
         'page_obj': get_page_context(Post.objects.all(), request)
     }
     return render(request, 'posts/index.html', context)
@@ -27,8 +25,6 @@ def group_list(request, slug):
     group = get_object_or_404(Group, slug=slug)
     context = {
         'group': group,
-        'author_link': 'author_link',
-        'group_link': 'group_link',
         'page_obj': get_page_context(group.posts.all(), request)
     }
     return render(request, 'posts/group_list.html', context)
@@ -138,5 +134,7 @@ def profile_follow(request, username):
 @login_required
 def profile_unfollow(request, username):
     user = request.user
-    Follow.objects.get(user=user, author__username=username).delete()
+    subscriber = Follow.objects.get(user=user, author__username=username)
+    if subscriber:
+        subscriber.delete()
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))

@@ -81,7 +81,7 @@ class PostFormsTest(TestCase):
                 self.assertEqual(key_form_data, expected_object)
 
     def test_edit_form(self):
-        """Проверка измения записи в БД при редактировании поста"""
+        """Проверка изменения записи в БД при редактировании поста"""
         self.authorized_client.get(
             reverse('posts:post_edit', kwargs={'post_id': self.post.id})
         )
@@ -101,6 +101,7 @@ class PostFormsTest(TestCase):
         )
 
     def test_add_comment(self):
+        '''Авторизованный пользователь может добавить комментарий'''
         TEXT = 'Текст комментария'
         comments_count = Comment.objects.count()
         post_id = self.post.id
