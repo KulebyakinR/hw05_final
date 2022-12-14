@@ -122,7 +122,9 @@ class PostPagesTests(TestCase):
         self.assertEqual(context_object.group, self.group)
 
     def test_profile_page_show_correct_context(self):
-        """Шаблон posts:profile сформирован с правильным контекстом."""
+        """Проверка:
+        Шаблон posts:profile сформирован с правильным контекстом.
+        """
         response = self.guest_client.get(
             reverse(
                 'posts:profile',
@@ -137,7 +139,9 @@ class PostPagesTests(TestCase):
         self.assertEqual(context_object.author, self.post.author)
 
     def test_post_detail_page_show_correct_context(self):
-        """Шаблон posts:post_detail сформирован с правильным контекстом."""
+        """Проверка:
+        Шаблон posts:post_detail сформирован с правильным контекстом.
+        """
         response = self.authorized_client.get(
             reverse(
                 'posts:post_detail',
@@ -148,7 +152,9 @@ class PostPagesTests(TestCase):
         self.check_contex(context_object)
 
     def test_post_create_page_show_correct_context(self):
-        """Шаблон posts:post_create  сформирован с правильным контекстом."""
+        """Проверка:
+        Шаблон posts:post_create  сформирован с правильным контекстом.
+        """
         response = self.authorized_client.get(
             reverse(
                 'posts:post_create',
@@ -164,7 +170,9 @@ class PostPagesTests(TestCase):
                 self.assertIsInstance(form_field, expected)
 
     def test_post_edit_page_show_correct_context(self):
-        """Шаблон posts:post_edit  сформирован с правильным контекстом."""
+        """Проверка:
+        Шаблон posts:post_edit  сформирован с правильным контекстом.
+        """
         response = self.authorized_client.get(
             reverse(
                 'posts:post_edit',
@@ -181,7 +189,9 @@ class PostPagesTests(TestCase):
                 self.assertIsInstance(form_field, expected)
 
     def test_new_post_display(self):
-        """Созданный пост появляется на главной, в группе и пройфайле"""
+        """Проверка:
+        Созданный пост появляется на главной, в группе и пройфайле.
+        """
         self.new_post = Post.objects.create(
             text='Новейший пост',
             author=self.user,
@@ -202,7 +212,9 @@ class PostPagesTests(TestCase):
                 self.assertEqual(context_post, post)
 
     def test_post_corrct_not_appear(self):
-        """Пост НЕ отображается в группе, к которой он не пренадлежит"""
+        """Проверка:
+        Пост НЕ отображается в группе, к которой он не пренадлежит.
+        """
         self.new_post = Post.objects.create(
             text='Новейший пост',
             author=self.user,
@@ -214,6 +226,7 @@ class PostPagesTests(TestCase):
         self.assertNotEqual(context_post, self.new_post)
 
     def test_index_page_cached(self):
+        '''Проверка: Страница posts:index кешируется.'''
         new_post = Post.objects.create(
             text='New post',
             author=self.user
@@ -233,8 +246,8 @@ class PostPagesTests(TestCase):
         self.assertNotEqual(actual_page, cleared_page)
 
     def test_autorized_user_get_follow(self):
-        """ Авторизованный пользователь может подписываться на других
-        пользователей
+        """Проверка:
+        Авторизованный пользователь подписывается на других пользователей.
         """
         self.authorized_client.post(
             reverse(
@@ -250,12 +263,9 @@ class PostPagesTests(TestCase):
         )
 
     def test_autorized_user_remove_follow(self):
-        """ Авторизованный пользователь может удалять их из подписок."""
-        self.authorized_client.post(
-            reverse(
-                'posts:profile_follow',
-                kwargs={'username': self.following}
-            )
+        """Проверка: Авторизованный пользователь удалять из подписок."""
+        Follow.objects.create(
+            user=self.user, author=self.following
         )
         self.authorized_client.post(
             reverse(
@@ -271,7 +281,7 @@ class PostPagesTests(TestCase):
         )
 
     def test_post_is_visible_for_subscriber(self):
-        '''Новый пост показывается подписчику'''
+        '''Проверка: Новый пост показывается подписчику.'''
         Follow.objects.create(
             user=self.sub, author=self.user
         )
@@ -286,10 +296,7 @@ class PostPagesTests(TestCase):
         )
 
     def test_post_is_invisible_for_not_subscriber(self):
-        '''Новый пост НЕ показывается НЕ-подписчику'''
-        Follow.objects.create(
-            user=self.sub, author=self.user
-        )
+        '''Проверка: Новый пост НЕ показывается НЕ-подписчику.'''
         test_post = Post.objects.create(
             author=self.user,
             text='Пост для проверки подписки',
@@ -326,6 +333,7 @@ class PaginatorViewsTest(TestCase):
         self.guest_client = Client()
 
     def test_first_page_contains_ten_records(self):
+        '''Проверка: Пагинатор работает и возвращает 10 объектов из БД.'''
         templates_pages_names = {
             reverse("posts:index"),
             reverse("posts:group_list", kwargs={"slug": "test_slug"}),

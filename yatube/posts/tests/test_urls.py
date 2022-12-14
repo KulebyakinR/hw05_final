@@ -50,7 +50,7 @@ class PostURLTests(TestCase):
         self.not_author_client.force_login(self.user)
 
     def test_url_exists_at_guest_client(self):
-        """Проверка доступа страниц для гостя"""
+        """Проверка доступа страниц для гостя."""
         guest_client_url_code = (
             (self.guest_client, self.INDEX, HTTPStatus.OK),
             (self.guest_client, self.GROUP_LIST, HTTPStatus.OK),
@@ -65,7 +65,7 @@ class PostURLTests(TestCase):
                 self.assertEqual(client.get(url).status_code, code)
 
     def test_url_exists_at_author_client(self):
-        """Проверка доступа страниц для автора"""
+        """Проверка доступа страниц для автора."""
         author_client_url_code = (
             (self.author_client, self.INDEX, HTTPStatus.OK),
             (self.author_client, self.GROUP_LIST, HTTPStatus.OK),
@@ -80,7 +80,7 @@ class PostURLTests(TestCase):
                 self.assertEqual(client.get(url).status_code, code)
 
     def test_url_exists_at_not_author_client(self):
-        """Проверка доступа страниц для авторизованного, не автора"""
+        """Проверка доступа страниц для авторизованного, не автора."""
         not_author_client_url_code = (
             (self.not_author_client, self.INDEX, HTTPStatus.OK),
             (self.not_author_client, self.GROUP_LIST, HTTPStatus.OK),

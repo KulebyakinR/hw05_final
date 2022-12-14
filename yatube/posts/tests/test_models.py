@@ -34,7 +34,7 @@ class PostModelTest(TestCase):
                 self.assertEqual(expected_object_name, expected)
 
     def test_verbose_name(self):
-        """Проверяем совпадение verbose_name"""
+        """Проверяем совпадение verbose_name."""
         post = PostModelTest.post
         field_verboses = {
             "text": "Текст поста",
